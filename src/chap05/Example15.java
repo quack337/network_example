@@ -13,19 +13,37 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Example14 {
+public class Example15 {
 
     static final String 저장폴더 = "c:/temp";
+
+    static class DownloadTask implements Runnable {
+        Article article;
+
+        public DownloadTask(Article article) {
+            this.article = article;
+        }
+
+        @Override
+        public void run() {
+            try {
+                String idx = article.getIdx();
+                String body = getArticleBody(idx);
+                article.setBody(body);
+                String path = 저장폴더 + "/##.html".replace("##", idx);
+                writeTextFile(path, body);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         String listUrl = "http://www.skhu.ac.kr/board/boardlist.aspx?curpage=1&bsid=10004&searchBun=51";
         List<Article> list = getArticleList(listUrl);
         for (Article article : list) {
-            String idx = article.getIdx();
-            String body = getArticleBody(idx);
-            article.setBody(body);
-            String path = 저장폴더 + "/##.html".replace("##", idx);
-            writeTextFile(path, body);
+            Thread thread = new Thread(new DownloadTask(article));
+            thread.start();
         }
     }
 
@@ -87,10 +105,6 @@ public class Example14 {
                 builder.append(s);
                 builder.append('\n');
             }
-        }
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
         }
         return builder.toString();
     }
